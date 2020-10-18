@@ -19,8 +19,12 @@ const db = new sqlite3.Database('./db/election.db', err => {
 });
 
 // Get all candidates
-app.get('/api/candidate', (req, res) => { // connect to api endpoint
-    const sql = `SELECT * FROM candidates`; // store argument
+app.get('/api/candidates', (req, res) => { // connect to api endpoint
+    const sql = `SELECT candidates.*, parties.name
+                AS party_name
+                FROM candidates
+                LEFT JOIN parties
+                ON candidates.party_id = parties.id`;
     const params = []; // store paramaters
     db.all(sql, params, (err, rows) => { // call to the database
         if (err) { // if there is an error
@@ -36,9 +40,13 @@ app.get('/api/candidate', (req, res) => { // connect to api endpoint
 });
 
 //locate and show one candidate based on primary key
-app.get('/api/candidate/:id', (req, res) => { // queries and filters api by id
-    const sql = `SELECT * FROM candidates
-                WHERE id = ?`;
+app.get('/api/candidates/:id', (req, res) => { // queries and filters api by id
+    const sql = `SELECT candidates.*, parties.name
+                AS party_name
+                FROM candidates
+                LEFT JOIN parties
+                ON candidates.party_id = parties.id
+                WHERE candidates.id = ?`;
     const params = [req.params.id];
     db.get(sql, params, (err, row) => { //db.get provides one result
         if(err) { 
@@ -54,7 +62,7 @@ app.get('/api/candidate/:id', (req, res) => { // queries and filters api by id
 });
 
 // Delete a candidate
-app.delete('/api/candidate/:id', (req, res) => {
+app.delete('/api/candidates/:id', (req, res) => {
     const sql = `DELETE FROM candidates WHERE id = ?`;
     const params = [req.params.id];
     db.run(sql, params, function(err, result) {
@@ -71,7 +79,7 @@ app.delete('/api/candidate/:id', (req, res) => {
 });
 
 // Create a candidate
-app.post('/api/candidate', ({ body }, res) => {
+app.post('/api/candidates', ({ body }, res) => {
     const errors = inputCheck(body, 'first_name', 'last_name', 'industry_connected');
     if (errors) {
         res.status(400).json({ error: errors });
